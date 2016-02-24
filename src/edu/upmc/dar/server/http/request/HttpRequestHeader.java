@@ -1,4 +1,4 @@
-package edu.upmc.dar.server.request;
+package edu.upmc.dar.server.http.request;
 
 import java.util.HashMap;
 import java.util.Map;

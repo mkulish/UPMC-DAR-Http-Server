@@ -1,19 +1,19 @@
-package edu.upmc.dar.applications.points.servlet;
+package edu.upmc.dar.applications.points.servlet.data.points;
 
 
-import edu.upmc.dar.applications.points.service.PointsService;
-import edu.upmc.dar.applications.points.service.impl.PointsServiceImpl;
+import edu.upmc.dar.applications.points.service.PointService;
+import edu.upmc.dar.applications.points.service.impl.PointServiceImpl;
 import edu.upmc.dar.applications.points.util.JsonUtil;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
 import edu.upmc.dar.server.common.annotation.Servlet;
-import edu.upmc.dar.server.request.HttpRequest;
-import edu.upmc.dar.server.response.HttpResponse;
+import edu.upmc.dar.server.http.request.HttpRequest;
+import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
 
 @Servlet(url = "/list", method = RequestMethod.GET)
 public class PointsGetAllServlet extends HttpServlet {
     //No dependencies injection for the moment
-    private PointsService pointsService = PointsServiceImpl.instance();
+    private PointService pointsService = PointServiceImpl.instance();
 
     @Override
     public void serve(HttpRequest request, HttpResponse response) throws Exception {

@@ -1,19 +1,19 @@
 package edu.upmc.dar.applications.points.service.impl;
 
 import edu.upmc.dar.applications.points.entity.Point2D;
-import edu.upmc.dar.applications.points.service.PointsService;
+import edu.upmc.dar.applications.points.service.PointService;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class PointsServiceImpl implements PointsService {
-    private static PointsServiceImpl instance;
-    private PointsServiceImpl(){}
+public class PointServiceImpl implements PointService {
+    private static PointServiceImpl instance;
+    private PointServiceImpl(){}
 
-    public static synchronized PointsServiceImpl instance(){
+    public static synchronized PointServiceImpl instance(){
         if(instance == null){
-            instance = new PointsServiceImpl();
+            instance = new PointServiceImpl();
         }
         return instance;
     }

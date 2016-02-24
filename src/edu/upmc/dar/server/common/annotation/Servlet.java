@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 public @interface Servlet {
     String url();
     RequestMethod method() default RequestMethod.ANY;
-    ContentType produces() default ContentType.TEXT_PLAIN;
+    ContentType produces() default ContentType.TEXT_HTML;
 }

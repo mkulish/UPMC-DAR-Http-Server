@@ -21,7 +21,7 @@ public enum ContentType {
                 return elem;
             }
         }
-        return TEXT_PLAIN;
+        return TEXT_HTML;
     }
 
     @Override

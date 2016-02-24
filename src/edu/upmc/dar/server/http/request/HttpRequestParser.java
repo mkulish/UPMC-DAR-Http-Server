@@ -1,17 +1,20 @@
-package edu.upmc.dar.server.util;
+package edu.upmc.dar.server.http.request;
 
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
-import edu.upmc.dar.server.request.HttpRequest;
+import edu.upmc.dar.server.http.session.SessionUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Socket;
 
 public class HttpRequestParser {
 
-    public static HttpRequest parseRequest(InputStream inputStream) throws Exception {
+    public static HttpRequest parseRequest(Socket socket) throws Exception {
+        InputStream inputStream = socket.getInputStream();
+
         HttpRequest request = new HttpRequest();
 
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -35,6 +38,7 @@ public class HttpRequestParser {
             //Parsing the request body
             //Avoid reading more than "Content-Length" bytes to not get blocked by the socket "read" method
             String lengthParam = request.getHeader().getParamsMap().get("Content-Length");
+
             if (lengthParam != null) {
                 int length = Integer.parseInt(lengthParam);
 
@@ -43,10 +47,20 @@ public class HttpRequestParser {
                     requestBody.append((char) reader.read());
                 }
                 request.setBody(requestBody.toString());
+                
+                System.out.println(requestBody.toString());
             }
 
             //Additional initialization
             request.setContentType(ContentType.getContentType(request.getHeader().getParamsMap().get("Accept")));
+            request.setIp(socket.getInetAddress());
+            
+            if(request.getHeader().getParamsMap().get("User-Agent") == null){
+            	request.getHeader().getParamsMap().put("User-Agent", "");
+            }
+
+            //Session
+            SessionUtil.checkSession(request);
 
             //Params parsing - if no files are uploaded
             String contentType = request.getHeader().getParamsMap().get("Content-Type");

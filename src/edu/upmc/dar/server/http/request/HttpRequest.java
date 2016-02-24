@@ -1,9 +1,11 @@
-package edu.upmc.dar.server.request;
+package edu.upmc.dar.server.http.request;
 
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
+import edu.upmc.dar.server.http.session.Session;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +20,9 @@ public class HttpRequest {
 
     private ContentType contentType;
 
-
+    private Session session;
+    private boolean sessionExpired;
+    private InetAddress ip;
 
     public RequestMethod getMethod() {
         return method;
@@ -74,6 +78,30 @@ public class HttpRequest {
 
     public String getParam(String paramName){
         return paramsMap.get(paramName);
+    }
+
+    public Session getSession() {
+        return session;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
+    }
+
+    public boolean isSessionExpired() {
+        return sessionExpired;
+    }
+
+    public void setSessionExpired(boolean sessionExpired) {
+        this.sessionExpired = sessionExpired;
+    }
+
+    public InetAddress getIp() {
+        return ip;
+    }
+
+    public void setIp(InetAddress ip) {
+        this.ip = ip;
     }
 
     @Override

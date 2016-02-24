@@ -1,7 +1,7 @@
 package edu.upmc.dar.server.dispatch;
 
 import edu.upmc.dar.server.common.exception.MultipleMappingsException;
-import edu.upmc.dar.server.request.HttpRequest;
+import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.servlet.HttpServlet;
 
 import java.util.HashMap;
@@ -10,11 +10,11 @@ import java.util.Map;
 public class ServletContainer {
     private Map<RequestMatch, HttpServlet> servletsMap = new HashMap<>();
 
-    public void registerServlet(RequestMatch matchingCriteria, HttpServlet servlet){
+    public synchronized void registerServlet(RequestMatch matchingCriteria, HttpServlet servlet){
         servletsMap.put(matchingCriteria, servlet);
     }
 
-    public void unregisterServlet(RequestMatch matchingCriteria){
+    public synchronized void unregisterServlet(RequestMatch matchingCriteria){
         servletsMap.remove(matchingCriteria);
     }
 
@@ -24,7 +24,7 @@ public class ServletContainer {
      * @return servlet that matches the request or null if no servlet found
      * @throws MultipleMappingsException if multiple mappings were found
      */
-    public HttpServlet processRequest(HttpRequest request) throws MultipleMappingsException {
+    public synchronized HttpServlet processRequest(HttpRequest request) throws MultipleMappingsException {
         HttpServlet result = null;
 
         for(Map.Entry<RequestMatch, HttpServlet> matching : servletsMap.entrySet()){

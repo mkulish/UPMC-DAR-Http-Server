@@ -2,7 +2,7 @@ package edu.upmc.dar.server.dispatch;
 
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
-import edu.upmc.dar.server.request.HttpRequest;
+import edu.upmc.dar.server.http.request.HttpRequest;
 
 public class RequestMatch {
     private RequestMethod method;

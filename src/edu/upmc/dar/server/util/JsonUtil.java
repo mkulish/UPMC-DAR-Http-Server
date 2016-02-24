@@ -1,6 +1,6 @@
 package edu.upmc.dar.server.util;
 
-import edu.upmc.dar.server.request.HttpRequest;
+import edu.upmc.dar.server.http.request.HttpRequest;
 
 import java.util.Map;
 

@@ -6,10 +6,12 @@ import edu.upmc.dar.server.common.enumeration.RequestMethod;
 import edu.upmc.dar.server.dispatch.RequestHandler;
 import edu.upmc.dar.server.dispatch.RequestMatch;
 import edu.upmc.dar.server.dispatch.ServletContainer;
-import edu.upmc.dar.server.request.HttpRequest;
-import edu.upmc.dar.server.response.HttpResponse;
+import edu.upmc.dar.server.http.request.HttpRequest;
+import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
-import edu.upmc.dar.server.util.HtmlProducerUtil;
+import edu.upmc.dar.server.html.page.EchoPage;
+import edu.upmc.dar.server.servlet.page.InternalErrorPageServlet;
+import edu.upmc.dar.server.servlet.page.NotFoundPageServlet;
 import edu.upmc.dar.server.util.JsonUtil;
 import edu.upmc.dar.server.util.Log;
 
@@ -35,7 +37,8 @@ public class Main {
 
 
     public static volatile ServletContainer servletContainer = new ServletContainer();
-    public static volatile HttpServlet echoServlet = new HttpServlet();
+    public static NotFoundPageServlet notFoundPageServlet = new NotFoundPageServlet();
+    public static InternalErrorPageServlet internalErrorPageServlet = new InternalErrorPageServlet();
 
     /**
      * Server's entry method
@@ -81,7 +84,7 @@ public class Main {
      * Manually register the initial servlets
      */
     private static void initServlets(){
-        servletContainer.registerServlet(new RequestMatch("/text"), new HttpServlet() {
+        servletContainer.registerServlet(new RequestMatch("/echo/text"), new HttpServlet() {
             @Override
             public void serve(HttpRequest request, HttpResponse response) {
                 response.setContentType(ContentType.TEXT_PLAIN);
@@ -89,15 +92,15 @@ public class Main {
             }
         });
 
-        servletContainer.registerServlet(new RequestMatch("/html"), new HttpServlet() {
+        servletContainer.registerServlet(new RequestMatch("/echo/html"), new HttpServlet() {
             @Override
             public void serve(HttpRequest request, HttpResponse response) {
                 response.setContentType(ContentType.TEXT_HTML);
-                response.setBody(HtmlProducerUtil.generateHtmlTable(request));
+                response.setBody(EchoPage.instance().produceHtml(request));
             }
         });
 
-        servletContainer.registerServlet(new RequestMatch("/json"), new HttpServlet() {
+        servletContainer.registerServlet(new RequestMatch("/echo/json"), new HttpServlet() {
             @Override
             public void serve(HttpRequest request, HttpResponse response) throws Exception {
                 response.setContentType(ContentType.APP_JSON);
@@ -184,21 +187,23 @@ public class Main {
      * @param newClass new class that is potentially a servlet
      * @throws Exception
      */
-    private static void processNewClass(Class newClass) throws Exception {
-        for (Annotation annotation : newClass.getDeclaredAnnotations()) {
-            if(annotation.annotationType() == Servlet.class){
-                Servlet servletAnnotation = (Servlet) annotation;
-                String url = servletAnnotation.url();
-                RequestMethod method = servletAnnotation.method();
-                ContentType contentType = servletAnnotation.produces();
+    private static void processNewClass(Class<?> newClass) throws Exception {
+        if(HttpServlet.class.isAssignableFrom(newClass)) {
+            for (Annotation annotation : newClass.getDeclaredAnnotations()) {
+                if (annotation.annotationType() == Servlet.class) {
+                    Servlet servletAnnotation = (Servlet) annotation;
+                    String url = servletAnnotation.url();
+                    RequestMethod method = servletAnnotation.method();
+                    ContentType contentType = servletAnnotation.produces();
 
-                RequestMatch matchingCriteria = new RequestMatch(url).setMethod(method);
-                HttpServlet servletInstance = (HttpServlet) newClass.newInstance();
-                servletInstance.setContentType(contentType);
+                    RequestMatch matchingCriteria = new RequestMatch(url).setMethod(method);
+                    HttpServlet servletInstance = (HttpServlet)newClass.newInstance();
+                    servletInstance.setContentType(contentType);
 
-                Log.info("Registering servlet " + newClass.getName() + ", method: " + method + ", url: " + url + ", produces: " + contentType);
-                servletContainer.unregisterServlet(matchingCriteria);
-                servletContainer.registerServlet(matchingCriteria, servletInstance);
+                    Log.info("Registering servlet " + newClass.getName() + ", method: " + method + ", url: " + url + ", produces: " + contentType);
+                    servletContainer.unregisterServlet(matchingCriteria);
+                    servletContainer.registerServlet(matchingCriteria, servletInstance);
+                }
             }
         }
     }

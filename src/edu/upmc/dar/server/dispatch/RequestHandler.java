@@ -1,10 +1,10 @@
 package edu.upmc.dar.server.dispatch;
 
 import edu.upmc.dar.server.Main;
-import edu.upmc.dar.server.request.HttpRequest;
-import edu.upmc.dar.server.response.HttpResponse;
+import edu.upmc.dar.server.http.request.HttpRequest;
+import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
-import edu.upmc.dar.server.util.HttpRequestParser;
+import edu.upmc.dar.server.http.request.HttpRequestParser;
 
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -23,11 +23,10 @@ public class RequestHandler implements Runnable {
         System.out.println();
         System.out.println("--------------------------");
         System.out.println();
-        System.out.println("[" + new Date() + "] Received request from "
-                + socket.getInetAddress() + ":" + socket.getPort());
+        System.out.println("[" + new Date() + "] Received request from " + socket.getInetAddress() + ":" + socket.getPort());
 
         try(PrintWriter socketWriter = new PrintWriter(socket.getOutputStream(), true)) {
-            HttpRequest request = HttpRequestParser.parseRequest(socket.getInputStream());
+            HttpRequest request = HttpRequestParser.parseRequest(socket);
             System.out.println(request);
 
             HttpResponse response = getResponse(request);
@@ -51,11 +50,18 @@ public class RequestHandler implements Runnable {
         HttpServlet servlet = Main.servletContainer.processRequest(request);
 
         if(servlet == null){
-            //TODO send 404 Not Found response or just echo the request??
-            servlet = Main.echoServlet;
-            System.out.println("Warning: no mapping found, sending default echo response");
+            //Send 404 Not Found response
+            System.out.println("Warning: no mapping found, sending 404 Not found response");
+            return Main.notFoundPageServlet.processRequest(request);
         }
 
-        return servlet.processRequest(request);
+        try{
+            return servlet.processRequest(request);
+        } catch (Exception ex){
+            //Send 500 Internal Server Error if there was an exception
+            System.out.println("Exception in the servlet method, sending 500 Internal Error response");
+            ex.printStackTrace();
+            return Main.internalErrorPageServlet.processRequest(request);
+        }
     }
 }

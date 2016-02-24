@@ -1,4 +1,4 @@
-package edu.upmc.dar.server.response;
+package edu.upmc.dar.server.http.response;
 
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;

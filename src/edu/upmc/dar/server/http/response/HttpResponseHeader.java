@@ -1,4 +1,4 @@
-package edu.upmc.dar.server.response;
+package edu.upmc.dar.server.http.response;
 
 import java.util.HashMap;
 import java.util.Map;
