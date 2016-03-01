@@ -12,31 +12,31 @@ import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
 import edu.upmc.dar.server.util.JsonUtil;
 
-@Servlet(url = "/p", method = RequestMethod.PUT, produces = ContentType.APP_JSON)
+@Servlet(url = "/p/{id}", method = RequestMethod.PUT, produces = ContentType.APP_JSON)
 public class PointsUpdateServlet extends HttpServlet {
     //No dependencies injection for the moment
     private PointService pointsService = PointServiceImpl.instance();
 
     @Override
     public void serve(HttpRequest request, HttpResponse response) throws Exception {
-        String idParam = request.getParam("id");
+        String idParam = request.getUrlParam("id");
         String xParam = request.getParam("x");
         String yParam = request.getParam("y");
 
         if(idParam != null){
-            Point2D point = new Point2D();
-            point.setId(Integer.parseInt(idParam));
-
-            if(xParam != null){
-                point.setX(Integer.parseInt(xParam));
+            Point2D point = pointsService.get(Integer.parseInt(idParam));
+            if(point != null){
+                if (xParam != null) {
+                    point.setX(Integer.parseInt(xParam));
+                }
+                if (yParam != null) {
+                    point.setY(Integer.parseInt(yParam));
+                }
+                pointsService.saveOrUpdate(point);
+                response.setBody(JsonUtil.serializeSubmitResponse(true, ""));
+            } else {
+                response.setBody(JsonUtil.serializeSubmitResponse(false, "Point with id " + idParam + " not found"));
             }
-            if(yParam != null){
-                point.setY(Integer.parseInt(yParam));
-            }
-
-            pointsService.saveOrUpdate(point);
         }
-
-        response.setBody(JsonUtil.serializeSubmitResponse(true, ""));
     }
 }

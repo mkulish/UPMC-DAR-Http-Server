@@ -12,7 +12,7 @@ import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
 
-@Servlet(url = "/p", method = RequestMethod.GET, produces = ContentType.APP_JSON)
+@Servlet(url = "/p/{id}", method = RequestMethod.GET, produces = ContentType.APP_JSON)
 public class PointsGetServlet extends HttpServlet {
     //No dependencies injection for the moment
     private PointService pointsService = PointServiceImpl.instance();
@@ -21,7 +21,7 @@ public class PointsGetServlet extends HttpServlet {
     public void serve(HttpRequest request, HttpResponse response) throws Exception {
         Point2D point = null;
 
-        String idParam = request.getParam("id");
+        String idParam = request.getUrlParam("id");
         if(idParam != null){
             point = pointsService.get(Integer.parseInt(idParam));
         }

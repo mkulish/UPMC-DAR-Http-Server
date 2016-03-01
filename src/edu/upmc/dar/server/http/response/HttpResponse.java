@@ -3,12 +3,19 @@ package edu.upmc.dar.server.http.response;
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.ResponseCode;
+import edu.upmc.dar.server.http.common.Cookie;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class HttpResponse {
     private HttpVersion version;
     private ResponseCode responseCode;
 
     private HttpResponseHeader header = new HttpResponseHeader();
+    private Map<String, Cookie> cookiesMap = new HashMap<>();
 
     private String body;
     private ContentType contentType;
@@ -42,6 +49,18 @@ public class HttpResponse {
         this.header = header;
     }
 
+    public void addCookie(Cookie cookie){
+        cookiesMap.put(cookie.getName(), cookie);
+    }
+
+    public Cookie getCookie(String paramName){
+        return cookiesMap.get(paramName);
+    }
+
+    public List<String> getCookieNames(){
+        return new LinkedList<>(cookiesMap.keySet());
+    }
+
     public String getBody() {
         return body;
     }
@@ -68,8 +87,12 @@ public class HttpResponse {
         result.append(version.toString()).append(" ").append(responseCode.getCode())
                                          .append(" ").append(responseCode.getMessage()).append('\n');
 
-        result.append(header.toString()).append('\n');
+        result.append(header.toString());
+        for(String cookieName : cookiesMap.keySet()){
+            result.append("Set-Cookie: ").append(cookiesMap.get(cookieName)).append('\n');
+        }
         result.append('\n');
+
         if(body != null) {
             result.append(body).append('\n');
         }

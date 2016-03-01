@@ -8,9 +8,11 @@ public class RequestMatch {
     private RequestMethod method;
     private ContentType contentType;
     private String urlPattern;
+    private String url;
 
-    public RequestMatch(String urlPattern) {
-        this.urlPattern = urlPattern;
+    public RequestMatch(String url) {
+        this.url = url;
+        this.urlPattern = url.replaceAll("\\{[^/]+\\}", "[^/]+");
     }
 
     public RequestMethod getMethod() {
@@ -37,6 +39,14 @@ public class RequestMatch {
 
     public void setUrlPattern(String urlPattern) {
         this.urlPattern = urlPattern;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     /**

@@ -1,22 +1,31 @@
 package edu.upmc.dar.server.http.session;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Session {
+	public static final int EXPIRY_IN_MINUTES = 2;
+	private static int tokenCounter = 0;
+
+	private String token;
+	private Date expirationDate;
 	private String id;
-	private Date date;
 	private Map<String, Object> attributesMap = new HashMap<>();
 	
 	public Session(String userAgent, String ip) {
-		this.id = SessionUtil.generateId(userAgent, ip);
-		this.date= new java.util.Date();
+		this.token = "id" + tokenCounter++;
+		this.id = SessionUtil.generateId(userAgent, ip, token);
+		updateExpirationDate();
 	}
 
-	public Session(String id){
-		this.id = id;
-		this.date = new Date();
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 
 	public String getId() {
@@ -27,12 +36,15 @@ public class Session {
 		this.id = id;
 	}
 
-	public Date getDate() {
-		return date;
+	public Date getExpirationDate() {
+		return expirationDate;
 	}
 
-	public void setDate(Date date) {
-		this.date = date;
+	public void updateExpirationDate() {
+		Calendar sessionExpirationDate = Calendar.getInstance();
+		sessionExpirationDate.setTime(new Date());
+		sessionExpirationDate.add(Calendar.MINUTE, EXPIRY_IN_MINUTES);
+		this.expirationDate = sessionExpirationDate.getTime();
 	}
 
 	public Object getAttribute(String key){

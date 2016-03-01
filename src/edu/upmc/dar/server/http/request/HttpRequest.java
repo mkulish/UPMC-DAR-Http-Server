@@ -3,10 +3,13 @@ package edu.upmc.dar.server.http.request;
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
+import edu.upmc.dar.server.http.common.Cookie;
 import edu.upmc.dar.server.http.session.Session;
 
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public class HttpRequest {
@@ -16,6 +19,8 @@ public class HttpRequest {
 
     private HttpRequestHeader header = new HttpRequestHeader();
     private Map<String, String> paramsMap = new HashMap<>();
+    private Map<String, String> urlParamsMap = new HashMap<>();
+    private Map<String, Cookie> cookiesMap = new HashMap<>();
     private String body;
 
     private ContentType contentType;
@@ -78,6 +83,26 @@ public class HttpRequest {
 
     public String getParam(String paramName){
         return paramsMap.get(paramName);
+    }
+
+    public void setUrlParam(String paramName, String value){
+        urlParamsMap.put(paramName, value);
+    }
+
+    public String getUrlParam(String paramName){
+        return urlParamsMap.get(paramName);
+    }
+
+    public void addCookie(Cookie cookie){
+        cookiesMap.put(cookie.getName(), cookie);
+    }
+
+    public Cookie getCookie(String paramName){
+        return cookiesMap.get(paramName);
+    }
+
+    public List<String> getCookieNames(){
+        return new LinkedList<>(cookiesMap.keySet());
     }
 
     public Session getSession() {

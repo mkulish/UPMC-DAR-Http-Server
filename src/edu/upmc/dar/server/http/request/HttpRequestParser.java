@@ -3,12 +3,15 @@ package edu.upmc.dar.server.http.request;
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.RequestMethod;
+import edu.upmc.dar.server.http.common.Cookie;
 import edu.upmc.dar.server.http.session.SessionUtil;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HttpRequestParser {
 
@@ -57,6 +60,18 @@ public class HttpRequestParser {
             
             if(request.getHeader().getParamsMap().get("User-Agent") == null){
             	request.getHeader().getParamsMap().put("User-Agent", "");
+            }
+
+            //Cookies
+            String cookiesHeader = request.getHeader().getParamsMap().get("Cookie");
+            if(cookiesHeader != null && ! "".equals(cookiesHeader)){
+                String[] cookies = cookiesHeader.split(";");
+                for(String cookie : cookies) {
+                    String[] parsedCookie = cookie.split("=");
+                    if(parsedCookie.length == 2) {
+                        request.addCookie(new Cookie(parsedCookie[0], parsedCookie[1]));
+                    }
+                }
             }
 
             //Session

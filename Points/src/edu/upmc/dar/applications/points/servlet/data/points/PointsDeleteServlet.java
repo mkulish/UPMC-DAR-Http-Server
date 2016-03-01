@@ -11,14 +11,14 @@ import edu.upmc.dar.server.http.response.HttpResponse;
 import edu.upmc.dar.server.servlet.HttpServlet;
 import edu.upmc.dar.server.util.JsonUtil;
 
-@Servlet(url = "/p", method = RequestMethod.DELETE, produces = ContentType.APP_JSON)
+@Servlet(url = "/p/{id}", method = RequestMethod.DELETE, produces = ContentType.APP_JSON)
 public class PointsDeleteServlet extends HttpServlet {
     //No dependencies injection for the moment
     private PointService pointsService = PointServiceImpl.instance();
 
     @Override
     public void serve(HttpRequest request, HttpResponse response) throws Exception {
-        String idParam = request.getParam("id");
+        String idParam = request.getUrlParam("id");
         if(idParam != null){
             pointsService.delete(Integer.parseInt(idParam));
         }

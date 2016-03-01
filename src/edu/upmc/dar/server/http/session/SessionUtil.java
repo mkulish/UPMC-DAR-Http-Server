@@ -1,5 +1,6 @@
 package edu.upmc.dar.server.http.session;
 
+import edu.upmc.dar.server.http.common.Cookie;
 import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.util.MD5Util;
 
@@ -11,41 +12,41 @@ public class SessionUtil {
 	public static synchronized void checkSession(HttpRequest request) {
 		String userAgent = request.getHeader().getParamsMap().get("User-Agent");
 		String ip = request.getIp().getHostAddress();
-		String sessionId = generateId(userAgent, ip);
 
-		Session session = sessionsMap.get(sessionId);
+		Cookie sessionCookie = request.getCookie("sessionToken");
+		String token = (sessionCookie != null) ? sessionCookie.getValue() : null;
+
+		Session session = null;
+		if(token != null){
+			session = sessionsMap.get(generateId(userAgent, ip, token));
+		}
 
 		if (session != null) {
-			System.out.println("Found the session " + sessionId + " for " + ip + " with user-agent '" + userAgent + "'");
+			System.out.println("Found the session with token " + token + " for " + ip + " with user-agent '" + userAgent + "'");
 
-			Calendar sessionExpirationDate = Calendar.getInstance();
-			sessionExpirationDate.setTime(session.getDate());
-			sessionExpirationDate.add(Calendar.SECOND, 10);
-
-			if (new Date().after(sessionExpirationDate.getTime())) {
+			if (new Date().after(session.getExpirationDate())) {
 				//Session expired
 				System.out.println("Session expired");
-
-				request.setSessionExpired(true);
 				session = null;
 			} else {
 				//Updating the session datetime
-				session.setDate(new Date());
+				session.updateExpirationDate();
 				request.setSession(session);
 			}
 		}
 
 		if (session == null) {
-			System.out.println("Created the session " + sessionId + " for " + ip + " with user-agent '" + userAgent + "'");
+			request.setSessionExpired(true);
+			session = new Session(userAgent, ip);
+			sessionsMap.put(session.getId(), session);
 
-			session = new Session(sessionId);
-			sessionsMap.put(sessionId, session);
+			System.out.println("Created the session with token " + session.getToken() + " for " + ip + " with user-agent '" + userAgent + "'");
 		}
 		request.setSession(session);
 	}
 
-	public static String generateId(String userAgent, String ip){
-		return MD5Util.md5(userAgent + ":" + ip);
+	public static String generateId(String userAgent, String ip, String token){
+		return MD5Util.md5(userAgent + "-&%$^" + ip + "^^ololo^^@@@ù*" + token);
 	}
 	
 	public synchronized void printSessions() {

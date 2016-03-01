@@ -3,8 +3,10 @@ package edu.upmc.dar.server.servlet;
 import edu.upmc.dar.server.common.enumeration.ContentType;
 import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.ResponseCode;
+import edu.upmc.dar.server.http.common.Cookie;
 import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.http.response.HttpResponse;
+import edu.upmc.dar.server.http.session.Session;
 
 /**
  * Processes the request, generates and sends back the response using the passed response object
@@ -46,6 +48,13 @@ public abstract class HttpServlet {
 
         //Writing the content type to the response header
         response.getHeader().getParamsMap().put("Content-Type", response.getContentType().getName());
+
+        //Creating new session
+        if(request.isSessionExpired()){
+            Cookie sessionCookie = new Cookie("sessionToken", request.getSession().getToken());
+            sessionCookie.setMaxAge(60 * Session.EXPIRY_IN_MINUTES);
+            response.addCookie(sessionCookie);
+        }
 
         return response;
     }

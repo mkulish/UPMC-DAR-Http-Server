@@ -9,6 +9,10 @@ import edu.upmc.dar.server.http.request.HttpRequestParser;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class RequestHandler implements Runnable {
     private final Socket socket;
