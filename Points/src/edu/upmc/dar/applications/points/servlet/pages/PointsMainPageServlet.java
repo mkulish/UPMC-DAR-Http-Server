@@ -1,7 +1,6 @@
 package edu.upmc.dar.applications.points.servlet.pages;
 
 
-import edu.upmc.dar.applications.points.html.PointsPage;
 import edu.upmc.dar.applications.points.service.PointService;
 import edu.upmc.dar.applications.points.service.impl.PointServiceImpl;
 import edu.upmc.dar.server.common.annotation.Servlet;
@@ -17,10 +16,9 @@ public class PointsMainPageServlet extends HttpServlet {
     private PointService pointsService = PointServiceImpl.instance();
 
     @Override
-    public void serve(HttpRequest request, HttpResponse response) throws Exception {
-        Model model = new Model();
+    public String serve(HttpRequest request, HttpResponse response, Model model) throws Exception {
         model.put("points", pointsService.getAll());
 
-        response.setBody(PointsPage.instance().produceHtml(model, request));
+        return "points/main/main-page";
     }
 }

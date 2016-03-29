@@ -5,6 +5,7 @@ import edu.upmc.dar.server.common.enumeration.HttpVersion;
 import edu.upmc.dar.server.common.enumeration.ResponseCode;
 import edu.upmc.dar.server.http.common.Cookie;
 
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,6 +20,8 @@ public class HttpResponse {
 
     private String body;
     private ContentType contentType;
+
+    private PrintWriter writer;
 
     public HttpResponse(HttpVersion version, ResponseCode responseCode) {
         this.version = version;
@@ -76,10 +79,17 @@ public class HttpResponse {
     public void setContentType(ContentType contentType) {
         this.contentType = contentType;
         if(header != null){
-            header.getParamsMap().put("Content-Type",contentType.getName());
+            header.getParamsMap().put("Content-Type",contentType.getName()+";charset=UTF-8");
         }
     }
 
+    public PrintWriter getWriter() {
+        return writer;
+    }
+
+    public void setWriter(PrintWriter writer) {
+        this.writer = writer;
+    }
 
     @Override
     public String toString(){

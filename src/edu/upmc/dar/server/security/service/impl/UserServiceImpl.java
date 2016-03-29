@@ -31,7 +31,19 @@ public class UserServiceImpl implements UserService {
     @Override
     public synchronized User get(Integer id) {
         if(id == null) return null;
-        return list.stream().filter(point -> id.equals(point.getId())).findFirst().orElse(null);
+        return list.stream().filter(user -> id.equals(user.getId())).findFirst().orElse(null);
+    }
+
+    @Override
+     public synchronized User get(String login) {
+        if(login == null) return null;
+        return list.stream().filter(user -> login.equals(user.getLogin())).findFirst().orElse(null);
+    }
+
+    @Override
+    public synchronized User get(String login, String passhash) {
+        if(login == null) return null;
+        return list.stream().filter(user -> login.equals(user.getLogin()) && passhash.equals(user.getPassword())).findFirst().orElse(null);
     }
 
     @Override
@@ -40,7 +52,7 @@ public class UserServiceImpl implements UserService {
             User existing = get(user.getId());
             if(existing != null){
                 //Updating the point
-                existing.setName(user.getName());
+                existing.setLogin(user.getLogin());
                 existing.setPassword(user.getPassword());
                 user.setId(existing.getId());
                 return existing;

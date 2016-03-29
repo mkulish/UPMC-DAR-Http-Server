@@ -13,6 +13,14 @@ import java.util.regex.Pattern;
 
 public class ServletContainer {
     private static final Pattern URL_PARAMS_PATTERN = Pattern.compile("\\{[^/]+\\}");
+    private static ServletContainer instance;
+    public static ServletContainer instance(){
+        if(instance == null){
+            instance = new ServletContainer();
+        }
+        return instance;
+    }
+
 
     private Map<RequestMatch, HttpServlet> servletsMap = new HashMap<>();
 

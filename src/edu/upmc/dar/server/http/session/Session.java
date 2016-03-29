@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Session {
-	public static final int EXPIRY_IN_MINUTES = 2;
+	public static final int EXPIRY_IN_MINUTES = 10;
 	private static int tokenCounter = 0;
 
 	private String token;

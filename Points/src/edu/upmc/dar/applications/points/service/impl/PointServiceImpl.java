@@ -9,7 +9,11 @@ import java.util.List;
 
 public class PointServiceImpl implements PointService {
     private static PointServiceImpl instance;
-    private PointServiceImpl(){}
+    private PointServiceImpl(){
+        saveOrUpdate(new Point2D(1,1));
+        saveOrUpdate(new Point2D(2,2));
+        saveOrUpdate(new Point2D(3,3));
+    }
 
     public static synchronized PointServiceImpl instance(){
         if(instance == null){

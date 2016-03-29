@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 
 public class HttpRequest {
-    private RequestMethod method;
-    private HttpVersion version;
-    private String url;
+    private RequestMethod method = RequestMethod.ANY;
+    private HttpVersion version = HttpVersion.v1_1;
+    private String url = "";
 
     private HttpRequestHeader header = new HttpRequestHeader();
     private Map<String, String> paramsMap = new HashMap<>();

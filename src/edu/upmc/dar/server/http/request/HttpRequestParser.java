@@ -10,8 +10,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class HttpRequestParser {
 
@@ -26,6 +24,9 @@ public class HttpRequestParser {
         try {
             //Parsing the first line - method, url and protocol version
             line = reader.readLine();
+            if(line == null || "".equals(line)){
+                return request;
+            }
             String[] data = line.split(" ");
 
             request.setMethod(RequestMethod.getMethod(data[0]));
@@ -33,7 +34,7 @@ public class HttpRequestParser {
             request.setVersion(HttpVersion.getVersion(data[2]));
 
             //Parsing the request header
-            while (!(line = reader.readLine()).equals("")) {
+            while ((line = reader.readLine()) != null && ! line.equals("")) {
                 data = line.split(":");
                 request.getHeader().getParamsMap().put(data[0].trim(), data[1].trim());
             }

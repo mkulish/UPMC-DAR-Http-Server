@@ -4,7 +4,9 @@ import edu.upmc.dar.server.http.common.Cookie;
 import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.util.MD5Util;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SessionUtil {
 	private static Map<String, Session> sessionsMap = new HashMap<>();
@@ -22,11 +24,11 @@ public class SessionUtil {
 		}
 
 		if (session != null) {
-			System.out.println("Found the session with token " + token + " for " + ip + " with user-agent '" + userAgent + "'");
+//			System.out.println("Found the session with token " + token + " for " + ip + " with user-agent '" + userAgent + "'");
 
 			if (new Date().after(session.getExpirationDate())) {
 				//Session expired
-				System.out.println("Session expired");
+//				System.out.println("Session expired");
 				session = null;
 			} else {
 				//Updating the session datetime
@@ -40,7 +42,7 @@ public class SessionUtil {
 			session = new Session(userAgent, ip);
 			sessionsMap.put(session.getId(), session);
 
-			System.out.println("Created the session with token " + session.getToken() + " for " + ip + " with user-agent '" + userAgent + "'");
+//			System.out.println("Created the session with token " + session.getToken() + " for " + ip + " with user-agent '" + userAgent + "'");
 		}
 		request.setSession(session);
 	}

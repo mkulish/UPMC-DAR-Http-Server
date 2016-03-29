@@ -8,35 +8,39 @@ import edu.upmc.dar.server.dispatch.RequestMatch;
 import edu.upmc.dar.server.dispatch.ServletContainer;
 import edu.upmc.dar.server.http.request.HttpRequest;
 import edu.upmc.dar.server.http.response.HttpResponse;
+import edu.upmc.dar.server.model.Model;
 import edu.upmc.dar.server.servlet.HttpServlet;
-import edu.upmc.dar.server.html.page.EchoPage;
 import edu.upmc.dar.server.servlet.page.InternalErrorPageServlet;
 import edu.upmc.dar.server.servlet.page.NotFoundPageServlet;
 import edu.upmc.dar.server.util.JsonUtil;
 import edu.upmc.dar.server.util.Log;
+import edu.upmc.dar.server.util.TemplateParserUtil;
+import edu.upmc.dar.server.view.Template;
+import edu.upmc.dar.server.view.ViewResolver;
 
+import javax.tools.*;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Enumeration;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class Main {
-    public static final int DEFAULT_PORT = 7707;
+    public static final int DEFAULT_PORT = 80;
     public static final int THREADS_POOL_SIZE = 5;
     public static final int MAX_CONNECTIONS = 10;
     public static final String DEPLOY_FOLDER_PATH = "deploy";
+    public static final String APPS_FOLDER_PATH = "apps";
+    public static boolean debugMode;
 
-
-    public static volatile ServletContainer servletContainer = new ServletContainer();
     public static NotFoundPageServlet notFoundPageServlet = new NotFoundPageServlet();
     public static InternalErrorPageServlet internalErrorPageServlet = new InternalErrorPageServlet();
 
@@ -46,23 +50,47 @@ public class Main {
      * @param args command line args array
      */
     public static void main(String[] args) {
-        int port = (args.length < 1) ? DEFAULT_PORT : Integer.parseInt(args[0]);
-        int poolSize = (args.length < 2) ? THREADS_POOL_SIZE : Integer.parseInt(args[1]);
-        int maxConnections = (args.length < 3) ? MAX_CONNECTIONS : Integer.parseInt(args[2]);
+        int port = DEFAULT_PORT;
+        int poolSize = THREADS_POOL_SIZE;
+        int maxConnections = MAX_CONNECTIONS;
+        for(int i = 0; i < args.length; ++i){
+            switch(args[i]){
+                case "-port":{
+                    if(i < args.length - 1){
+                        port = Integer.parseInt(args[++i]);
+                    }
+                    break;
+                }
+                case "-poolSize":{
+                    if(i < args.length - 1){
+                        poolSize = Integer.parseInt(args[++i]);
+                    }
+                    break;
+                }
+                case "-maxCon":{
+                    if(i < args.length - 1){
+                        maxConnections = Integer.parseInt(args[++i]);
+                    }
+                    break;
+                }
+                case "-debug":{
+                    debugMode = true;
+                    break;
+                }
+            }
+        }
 
         ExecutorService pool = Executors.newFixedThreadPool(poolSize);
 
         try{
-            Log.info("Initializing servlets..");
             initServlets();
-            Log.info("Servlets initialization completed successfully\n");
-
-            Log.info("Initializing deployment listener..");
+            initTemplates();
+            loadApplications();
             initDeployChecker();
-            Log.info("Deployment listener initialized\n");
 
             ServerSocket Server = new ServerSocket(port, maxConnections, InetAddress.getByName("127.0.0.1"));
-            Log.info("HTTP server started on port " + port + "\n");
+            Log.skipLine();
+            Log.info("HTTP server started on port " + port + ((debugMode) ? " in debug mode" : ""));
 
             while(true) {
                 try {
@@ -84,29 +112,75 @@ public class Main {
      * Manually register the initial servlets
      */
     private static void initServlets(){
-        servletContainer.registerServlet(new RequestMatch("/echo/text"), new HttpServlet() {
+        Log.info("Initializing core servlets..");
+
+        ServletContainer.instance().registerServlet(new RequestMatch("/echo/text"), new HttpServlet() {
             @Override
-            public void serve(HttpRequest request, HttpResponse response) {
+            public String serve(HttpRequest request, HttpResponse response, Model model) {
                 response.setContentType(ContentType.TEXT_PLAIN);
-                response.setBody(request.toString());
+                return request.toString();
             }
         });
 
-        servletContainer.registerServlet(new RequestMatch("/echo/html"), new HttpServlet() {
+        ServletContainer.instance().registerServlet(new RequestMatch("/echo/html"), new HttpServlet() {
             @Override
-            public void serve(HttpRequest request, HttpResponse response) {
+            public String serve(HttpRequest request, HttpResponse response, Model model) {
                 response.setContentType(ContentType.TEXT_HTML);
-                response.setBody(EchoPage.instance().produceHtml(request));
+                return "templates/echo";
             }
         });
 
-        servletContainer.registerServlet(new RequestMatch("/echo/json"), new HttpServlet() {
+        ServletContainer.instance().registerServlet(new RequestMatch("/echo/json"), new HttpServlet() {
             @Override
-            public void serve(HttpRequest request, HttpResponse response) throws Exception {
+            public String serve(HttpRequest request, HttpResponse response, Model model) throws Exception {
                 response.setContentType(ContentType.APP_JSON);
-                response.setBody(JsonUtil.serializeRequest(request));
+                return JsonUtil.serializeRequest(request);
             }
         });
+
+        Log.info("Core servlets initialization completed successfully");
+    }
+
+    /**
+     * Manually register the initial templates
+     */
+    private static void initTemplates() throws Exception {
+        Log.info("Initializing core templates..");
+
+        String webappFolderPath = "../webapp";
+        File webappFolder = new File("webapp");
+
+        ClassLoader classLoader = new URLClassLoader(new URL[]{webappFolder.toURI().toURL()});
+        processApplication(classLoader, webappFolder, "", webappFolderPath);
+
+        Log.info("Core templates initialization completed successfully");
+    }
+
+    /**
+     * Loads all the previously installed applications from the apps folder
+     */
+    private static void loadApplications() throws Exception{
+        Log.skipLine();
+        Log.info("Loading applications..");
+
+        File appsFolder = new File(APPS_FOLDER_PATH);
+        if(! appsFolder.exists()){
+            appsFolder.mkdir();
+        }
+
+        for(File appFolder : appsFolder.listFiles()){
+            if(appFolder.isDirectory()){
+                Log.skipLine();
+                Log.info("Installing the application " + appFolder.getName());
+
+                ClassLoader classLoader = new URLClassLoader(new URL[]{appFolder.toURI().toURL()});
+                processApplication(classLoader, appFolder, "", appFolder.getName());
+
+                Log.info("The application " + appFolder.getName() + " was successfully installed\n");
+            }
+        }
+
+        Log.info("All applications were loaded");
     }
 
     /**
@@ -114,6 +188,9 @@ public class Main {
      * Loads new applications from all found jars
      */
     private static void initDeployChecker(){
+        Log.skipLine();
+        Log.info("Initializing deployment listener..");
+
         File deployFolder = new File(DEPLOY_FOLDER_PATH);
         if(! deployFolder.exists()){
             if(! deployFolder.mkdir()){
@@ -134,6 +211,8 @@ public class Main {
                 }
             }
         }, 0, 1000);
+
+        Log.info("Deployment listener initialized");
     }
 
     /**
@@ -144,7 +223,9 @@ public class Main {
         File deployFolder = new File(DEPLOY_FOLDER_PATH);
         if(deployFolder.exists() && deployFolder.isDirectory()){
             for(File archive : deployFolder.listFiles((dir, name) -> name.endsWith(".jar"))){
+                Log.skipLine();
                 Log.info("Deployment listener: loading the application " + archive.getName());
+
                 processJarFile(archive);
 
                 if(! archive.delete()){
@@ -155,29 +236,82 @@ public class Main {
     }
 
     /**
-     * Performs applications installation given the jar archive
+     * Extracts the jar file into the apps folder and runs the installation
      * @param file application archive
      * @throws Exception
      */
     private static void processJarFile(File file) throws Exception {
+        String appName = file.getName().substring(0, file.getName().length() - ".jar".length());
         JarFile jarFile = new JarFile(file.getPath());
         Enumeration<JarEntry> e = jarFile.entries();
 
-        URL[] urls = { new URL("jar:file:" + file.getPath() +"!/") };
-        URLClassLoader cl = URLClassLoader.newInstance(urls);
+        File appsFolder = new File(APPS_FOLDER_PATH);
+        if(! appsFolder.exists()){
+            appsFolder.mkdir();
+        }
+
+        File appFolder = new File(appsFolder, appName);
+        if(appFolder.exists()) {
+            appFolder.delete();
+        }
+        appFolder.mkdir();
 
         while (e.hasMoreElements()) {
             JarEntry je = e.nextElement();
-            if(je.isDirectory() || !je.getName().endsWith(".class")){
+            File entryFile = new File(appFolder, je.getName());
+
+            if(je.isDirectory()){
+                entryFile.mkdir();
                 continue;
             }
-            String className = je.getName().substring(0, je.getName().length() - ".class".length()).replace('/', '.');
-            processNewClass(cl.loadClass(className));
+
+            InputStream is = jarFile.getInputStream(je);
+            FileOutputStream os = new FileOutputStream(entryFile);
+            while(is.available() > 0){
+                os.write(is.read());
+            }
+            os.close();
+            is.close();
+        }
+        jarFile.close();
+
+        Log.info("The jar file " + file.getName() + " was extracted, installing the application..\n");
+
+        ClassLoader classLoader = new URLClassLoader(new URL[]{appFolder.toURI().toURL()});
+        processApplication(classLoader, appFolder, "", appName);
+
+        Log.info("The application " + appName + " was successfully installed\n");
+    }
+
+    /**
+     * Performs applications installation
+     * @param folder application folder
+     * @throws Exception
+     */
+    private static void processApplication(ClassLoader cl, File folder, String currentPath, String appName) throws Exception {
+        String packageName = currentPath.replace('/', '.');
+
+        List<Object[]> templates = new LinkedList<>();
+
+        for(File file : folder.listFiles()){
+            if(file.isDirectory()){
+                processApplication(cl, file, (("".equals(currentPath)) ? "" : currentPath + "/") + file.getName(), appName);
+            } else {
+                if(file.getName().endsWith(".class")){
+                    String className = packageName + "." + file.getName().substring(0, file.getName().length() - ".class".length());
+                    processNewClass(cl.loadClass(className));
+                }
+                if(file.getName().endsWith(".tpl")){
+                    templates.add(new Object[]{file, currentPath});
+                }
+            }
         }
 
-        Log.info("The application " + file.getName() + " was successfully deployed\n");
-        cl.close();
-        jarFile.close();
+        for(Object[] template : templates){
+            File templateFile = (File)template[0];
+            String templatePath = (String)template[1];
+            processNewTemplate(cl, templateFile, templatePath, appName);
+        }
     }
 
     /**
@@ -200,11 +334,68 @@ public class Main {
                     HttpServlet servletInstance = (HttpServlet)newClass.newInstance();
                     servletInstance.setContentType(contentType);
 
-                    Log.info("Registering servlet " + newClass.getName() + ", method: " + method + ", url: " + url + ", produces: " + contentType);
-                    servletContainer.unregisterServlet(matchingCriteria);
-                    servletContainer.registerServlet(matchingCriteria, servletInstance);
+                    Log.debug("Registering servlet " + newClass.getName() + ", method: " + method + ", url: " + url + ", produces: " + contentType);
+                    ServletContainer.instance().unregisterServlet(matchingCriteria);
+                    ServletContainer.instance().registerServlet(matchingCriteria, servletInstance);
                 }
             }
         }
+    }
+
+    /**
+     * Registers the template in the view resolver
+     * @param templateFile the template file
+     * @param path the path to the template
+     * @throws Exception
+     */
+    private static void processNewTemplate(ClassLoader classLoader, File templateFile, String path, String appName) throws Exception {
+        String templateName = templateFile.getName().substring(0, templateFile.getName().length() - ".tpl".length());
+
+        StringBuilder templateClassNameSb = new StringBuilder();
+        for(String nameFragment : templateName.split("[-_.]")){
+            templateClassNameSb.append(nameFragment.substring(0,1).toUpperCase() + nameFragment.substring(1));
+        }
+        templateClassNameSb.append("Template");
+        String templateClassName =  templateClassNameSb.toString();
+        String packageName = path.replace('/', '.');
+
+        File generatedSrcFile = TemplateParserUtil.compileTemplate(templateFile, path, appName, packageName, templateClassName);
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null);
+
+        List<String> optionList = new LinkedList<>();
+        optionList.add("-classpath");
+        optionList.add(System.getProperty("java.class.path") + ";apps\\" + appName);
+
+        Iterable<? extends JavaFileObject> compilationUnit
+                = fileManager.getJavaFileObjectsFromFiles(Collections.singletonList(generatedSrcFile));
+        JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, optionList, null, compilationUnit);
+
+        if(task.call()){
+            Class<?> templateClass = classLoader.loadClass(packageName + "." + templateClassName);
+            Template templateInstance = (Template)templateClass.newInstance();
+            String templateFullName = path + "/" + templateName;
+
+            ViewResolver.instance().unregisterTemplate(templateFullName);
+            ViewResolver.instance().registerTemplate(templateFullName, templateInstance);
+
+            Log.debug("Registering template " + templateFullName);
+
+            File generatedBinFile = new File(generatedSrcFile.getAbsolutePath().replace(".java",".class"));
+            generatedBinFile.delete();
+            if(!debugMode){
+                generatedSrcFile.delete();
+            }
+        } else {
+            for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics.getDiagnostics()) {
+                System.err.format("%s: %d - %s%n",
+                        diagnostic.getSource().toUri(),
+                        diagnostic.getLineNumber(),
+                        diagnostic.getMessage(Locale.ENGLISH));
+            }
+        }
+        fileManager.close();
     }
 }

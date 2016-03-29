@@ -3,7 +3,8 @@ package edu.upmc.dar.server.common.enumeration;
 public enum ContentType {
     TEXT_PLAIN("text/plain"),
     TEXT_HTML("text/html"),
-    APP_JSON("application/json");
+    APP_JSON("application/json"),
+    EVENT_STREAM("text/event-stream");
 
     private String name;
 

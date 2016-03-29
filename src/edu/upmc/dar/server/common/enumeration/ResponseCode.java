@@ -3,7 +3,7 @@ package edu.upmc.dar.server.common.enumeration;
 public enum ResponseCode {
     OK(200, "OK"),
     NOT_FOUND(404, "Not Found"),
-    MOVED_PERMANENTLY(301, "Moved Permanently");
+    REDIRECT(302, "Found");
 
     private int code;
     private String message;
